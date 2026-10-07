@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <base target="_top">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #38271f;
+      --muted: #81736b;
+      --line: #e9e1db;
+      --surface: #ffffff;
+      --canvas: #faf8f6;
+      --navy: #4a3025;
+      --blue: #8a5a3b;
+      --green: #47765d;
+      --amber: #a2763f;
+      --red: #a94e43;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font: 14px/1.45 "Segoe UI", Arial, sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .page { min-height: 100vh; min-height: 100dvh; padding: clamp(16px, 2.5vw, 34px) clamp(14px, 2.5vw, 34px) calc(88px + env(safe-area-inset-bottom)); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin: 0 auto 24px; max-width: 1500px; }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; color: #fff; background: var(--navy); }
+    .brand-mark svg { width: 24px; height: 24px; }
+    .eyebrow { margin: 0 0 3px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; color: var(--ink); font-size: 23px; font-weight: 700; letter-spacing: -.02em; }
+    .updated { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; font-weight: 650; transition: background .15s, border .15s; }
+    .button:hover { background: #f8f5f2; border-color: #d8c9bd; }
+    .button svg { width: 15px; height: 15px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(310px, .9fr); gap: 18px; max-width: 1500px; margin: auto; }
+    .main-column, .side-column { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+    .card-pad { padding: 20px; }
+    .section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 17px; }
+    h2 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+    .section-caption { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .metric { min-height: 108px; padding: 15px 16px; background: #fff; border: 1px solid var(--line); border-radius: 9px; }
+    .metric-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 650; }
+    .metric-symbol { display: grid; place-items: center; width: 27px; height: 27px; color: var(--blue); background: #f5eee9; border-radius: 7px; }
+    .metric-symbol svg { width: 15px; height: 15px; }
+    .metric-value { margin-top: 9px; color: var(--ink); font-size: 27px; font-weight: 750; letter-spacing: -.04em; }
+    #metric-progress { font-size: 38px; line-height: 1.05; }
+    .metric-note { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .health { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 25px; }
+    .health-ring { position: relative; display: grid; place-items: center; width: 128px; height: 128px; margin: 0 auto; border-radius: 50%; background: conic-gradient(var(--blue) var(--progress, 0%), #eee8e3 0); }
+    .health-ring::before { position: absolute; width: 102px; height: 102px; content: ""; background: #fff; border-radius: 50%; }
+    .health-number { z-index: 1; font-size: 26px; font-weight: 750; letter-spacing: -.04em; }
+    .health-number small { display: block; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+    .health-copy { min-width: 0; }
+    .health-status { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 9px; color: var(--green); font-size: 12px; font-weight: 700; }
+    .health-status::before { width: 7px; height: 7px; content: ""; background: currentColor; border-radius: 50%; }
+    .health-copy p { max-width: 550px; margin: 0; color: var(--muted); font-size: 12px; }
+    .health-facts { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 16px; color: var(--ink); font-size: 11px; font-weight: 650; }
+    .health-facts span { color: var(--muted); font-weight: 500; }
+    .category-list { display: flex; flex-direction: column; gap: 15px; }
+    .category-row { display: grid; grid-template-columns: minmax(115px, 1fr) minmax(130px, 1.5fr) 64px; align-items: center; gap: 13px; }
+    .category-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .category-swatch { flex: 0 0 auto; width: 8px; height: 8px; background: var(--category-color); border-radius: 50%; }
+    .category-label { overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { overflow: hidden; height: 8px; background: #f0ebe7; border-radius: 99px; }
+    .bar-fill { height: 100%; background: var(--blue); border-radius: inherit; }
+    .category-percent { color: var(--ink); font-size: 11px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
+    .category-detail { grid-column: 2 / 4; margin-top: -10px; color: #6f5c50; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .facility-tools { display: flex; align-items: center; gap: 8px; }
+    .search { width: 180px; min-height: 34px; padding: 0 10px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 7px; outline: 0; font-size: 11px; }
+    .search:focus { border-color: #b4937d; box-shadow: 0 0 0 3px #8a5a3b14; }
+    .table-wrap { overflow: auto; max-height: 370px; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { position: sticky; top: 0; z-index: 1; padding: 10px 11px; color: var(--muted); background: #faf8f6; border-bottom: 1px solid var(--line); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    td { padding: 10px 11px; border-bottom: 1px solid #f0ebe7; font-size: 11px; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .facility-name { font-weight: 650; }
+    .facility-progress { display: flex; align-items: center; gap: 9px; min-width: 130px; }
+    .facility-progress .bar-track { flex: 1; min-width: 48px; }
+    .facility-progress span { width: 37px; color: var(--muted); font-size: 10px; text-align: right; }
+    .pill { display: inline-flex; padding: 4px 7px; border-radius: 20px; font-size: 9px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
+    .pill-risk { color: var(--red); background: #fbefed; }
+    .pill-monitor { color: var(--amber); background: #f8f2e9; }
+    .pill-track { color: var(--green); background: #edf4ef; }
+    .alerts { display: flex; flex-direction: column; gap: 10px; }
+    .alert { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; background: #fdfcfb; border: 1px solid var(--line); border-radius: 8px; }
+    .alert-mark { flex: 0 0 auto; width: 8px; height: 8px; margin-top: 4px; background: var(--amber); border-radius: 50%; }
+    .alert.critical .alert-mark { background: var(--red); }
+    .alert.positive .alert-mark { background: var(--green); }
+    .alert-title { margin: 0; font-size: 11px; font-weight: 700; }
+    .alert-text { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .quality-score { display: flex; align-items: baseline; gap: 5px; margin-bottom: 12px; }
+    .quality-score strong { font-size: 28px; letter-spacing: -.04em; }
+    .quality-score span { color: var(--muted); font-size: 11px; }
+    .quality-bar { height: 7px; margin-bottom: 13px; background: #f0ebe7; border-radius: 99px; overflow: hidden; }
+    .quality-bar div { height: 100%; background: var(--green); border-radius: inherit; }
+    .quality-list { display: grid; gap: 9px; }
+    .quality-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 12px; color: var(--muted); font-size: 11px; }
+    .quality-item span { min-width: 0; overflow-wrap: anywhere; }
+    .quality-item strong { flex: 0 0 auto; color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; }
+    .allocation { display: flex; flex-direction: column; gap: 11px; }
+    .allocation-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; }
+    .allocation-name { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .allocation-name span:last-child { overflow: hidden; text-overflow: ellipsis; }
+    .allocation-value { color: var(--ink); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .allocation-row .bar-track { grid-column: 1 / 3; height: 5px; }
+    .planning-note { padding: 11px 12px; color: var(--muted); background: #faf8f6; border: 1px solid var(--line); border-radius: 8px; font-size: 10px; line-height: 1.55; }
+    .planning-note strong { display: block; margin-bottom: 3px; color: var(--ink); font-size: 11px; }
+    .loading-state, .empty-state { padding: 22px 12px; color: var(--muted); font-size: 12px; text-align: center; }
+    .error-banner { display: none; margin: 0 auto 16px; max-width: 1500px; padding: 11px 14px; color: #8a3932; background: #fbefed; border: 1px solid #ecd3ce; border-radius: 8px; font-size: 12px; }
+    .clark-launcher { position: fixed; right: max(26px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 7px 17px 7px 8px; color: #fff; background: var(--navy); border: 0; border-radius: 28px; font-size: 13px; font-weight: 700; }
+    .clark-launcher:hover { background: #5a3c2f; transform: translateY(-1px); }
+    .clark-avatar { display: grid; place-items: center; width: 38px; height: 38px; color: var(--navy); background: #fff; border-radius: 50%; font-size: 14px; font-weight: 800; letter-spacing: -.04em; }
+    .clark-online { display: block; margin-top: 1px; color: #e4d7cf; font-size: 9px; font-weight: 500; text-align: left; }
+    .chat-panel { position: fixed; right: max(26px, env(safe-area-inset-right)); bottom: max(91px, calc(env(safe-area-inset-bottom) + 68px)); z-index: 19; display: none; flex-direction: column; width: min(390px, calc(100vw - 28px)); height: min(570px, calc(100dvh - 120px)); overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+    .chat-panel.open { display: flex; }
+    .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; color: #fff; background: var(--navy); }
+    .chat-title { display: flex; align-items: center; gap: 10px; }
+    .chat-header .clark-avatar { width: 34px; height: 34px; font-size: 12px; }
+    .chat-title strong { display: block; font-size: 13px; }
+    .chat-title span { display: block; color: #e4d7cf; font-size: 10px; }
+    .chat-close { display: grid; place-items: center; width: 30px; height: 30px; color: white; background: transparent; border: 0; border-radius: 6px; }
+    .chat-close:hover { background: #ffffff1c; }
+    .chat-messages { display: flex; flex: 1; flex-direction: column; gap: 10px; overflow-y: auto; padding: 15px; background: #faf8f6; }
+    .chat-message { max-width: 88%; padding: 10px 12px; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 10px 10px 10px 2px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chat-message.user { align-self: flex-end; color: #fff; background: var(--navy); border-color: var(--navy); border-radius: 10px 10px 2px 10px; }
+    .change-preview { align-self: stretch; max-width: 100%; padding: 13px; white-space: normal; }
+    .change-preview-title { margin: 0 0 4px; color: var(--ink); font-size: 13px; font-weight: 750; }
+    .change-preview-intro, .change-preview-status { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+    .change-list { display: grid; gap: 9px; margin: 0 0 12px; padding: 0; list-style: none; }
+    .change-list li { padding: 9px; background: #faf8f6; border: 1px solid var(--line); border-radius: 7px; }
+    .change-label { display: block; color: var(--ink); font-size: 11px; font-weight: 700; }
+    .change-values { display: block; margin-top: 3px; color: var(--navy); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+    .change-reason { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .change-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .change-actions button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; font-size: 11px; font-weight: 700; }
+    .change-confirm { color: white; background: var(--navy); border-color: var(--navy) !important; }
+    .change-confirm:hover { background: #5a3c2f; }
+    .change-cancel { color: var(--ink); background: white; }
+    .chat-form { display: flex; gap: 8px; padding: 11px; border-top: 1px solid var(--line); }
+    .chat-input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; outline: 0; font-size: 12px; }
+    .chat-input:focus { border-color: #b4937d; }
+    .chat-send { width: 38px; color: #fff; background: var(--blue); border: 0; border-radius: 8px; }
+    .chat-send:disabled { opacity: .5; cursor: not-allowed; }
+    @media (min-width: 1550px) {
+      .page { padding: 34px 48px calc(88px + env(safe-area-inset-bottom)); }
+      .layout { gap: 22px; }
+      .main-column, .side-column { gap: 22px; }
+      .card-pad { padding: 24px; }
+      .metric { min-height: 122px; padding: 18px; }
+      .metric-value { font-size: 31px; }
+      .table-wrap { max-height: 440px; }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .main-column, .side-column { gap: 14px; }
+      .side-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      .side-column .card:last-child { grid-column: 1 / -1; }
+      .table-wrap { max-height: 420px; }
+    }
+    @media (max-width: 700px) {
+      body { font-size: 17px; }
+      .page { padding: 16px 14px calc(88px + env(safe-area-inset-bottom)); }
+      .topbar { align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+      .brand { gap: 10px; }
+      .brand-mark { width: 40px; height: 40px; border-radius: 10px; }
+      h1 { font-size: 23px; line-height: 1.25; }
+      .eyebrow { font-size: 10px; letter-spacing: .08em; }
+      .updated { max-width: 54vw; font-size: 12px; line-height: 1.35; }
+      .top-actions { flex: 0 0 auto; }
+      .layout { gap: 14px; }
+      .main-column { gap: 14px; }
+      .side-column { display: flex; }
+      .card-pad { padding: 16px; }
+      .section-heading { gap: 10px; margin-bottom: 14px; }
+      .section-caption { font-size: 15px; line-height: 1.45; }
+      .metrics { gap: 9px; }
+      .metric { min-height: 122px; padding: 14px; }
+      .metric-label { font-size: 15px; }
+      .metric-value { font-size: 31px; }
+      #metric-progress { font-size: 40px; }
+      .metric-note { font-size: 14px; }
+      .health { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
+      .health-ring { width: 96px; height: 96px; }
+      .health-ring::before { width: 76px; height: 76px; }
+      .health-number { font-size: 22px; }
+      .health-facts { gap: 8px 14px; font-size: 14px; }
+      .facility-tools { flex: 0 0 auto; }
+      .search { width: min(220px, 42vw); min-height: 46px; font-size: 15px; }
+      .table-wrap { max-height: 360px; }
+      table { min-width: 560px; }
+      th, td { padding: 14px 11px; font-size: 15px; }
+      .pill { padding: 7px 10px; font-size: 12px; }
+      .alert-title { font-size: 15px; }
+      .alert-text { font-size: 14px; }
+      .quality-item, .quality-item strong { font-size: 15px; line-height: 1.45; }
+      .allocation-name { font-size: 15px; }
+      .allocation-value { font-size: 14px; }
+      .planning-note { font-size: 14px; }
+      .planning-note strong { font-size: 15px; }
+      .clark-launcher { right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); }
+      .chat-panel { right: max(12px, env(safe-area-inset-right)); bottom: max(78px, calc(env(safe-area-inset-bottom) + 68px)); width: min(420px, calc(100vw - 24px)); height: min(620px, calc(100dvh - 100px)); }
+    }
+    @media (max-width: 480px) {
+      .page { padding-right: 11px; padding-left: 11px; }
+      .topbar { align-items: center; }
+      .brand { min-width: 0; }
+      .brand > div:last-child { min-width: 0; }
+      .brand-mark { flex: 0 0 auto; width: 36px; height: 36px; }
+      .brand-mark svg { width: 20px; height: 20px; }
+      h1 { font-size: 21px; }
+      .updated { max-width: 56vw; overflow-wrap: anywhere; }
+      .top-actions .button { width: auto; min-height: 46px; padding: 0 11px; font-size: 13px; }
+      .top-actions .button span { display: inline; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .metric { min-height: 122px; padding: 12px; }
+      .metric-label { gap: 5px; font-size: 14px; line-height: 1.4; }
+      .metric-symbol { width: 28px; height: 28px; }
+      .metric-symbol svg { width: 16px; height: 16px; }
+      .metric-value { margin-top: 8px; font-size: 29px; }
+      #metric-progress { font-size: 37px; }
+      .metric-note { font-size: 14px; line-height: 1.45; }
+      .card-pad { padding: 14px; }
+      h2 { font-size: 18px; }
+      .section-caption { font-size: 15px; line-height: 1.45; }
+      .health { grid-template-columns: 78px minmax(0, 1fr); gap: 11px; }
+      .health-ring { width: 74px; height: 74px; }
+      .health-ring::before { width: 58px; height: 58px; }
+      .health-number { font-size: 19px; }
+      .health-number small { font-size: 10px; }
+      .health-copy p { font-size: 15px; line-height: 1.5; }
+      .health-facts { display: grid; gap: 8px; margin-top: 11px; font-size: 14px; }
+      .category-list { gap: 19px; }
+      .category-row { grid-template-columns: minmax(0, 1fr) 54px; gap: 8px 10px; }
+      .category-name { grid-column: 1; font-size: 15px; }
+      .category-row .bar-track { grid-column: 1 / 3; grid-row: 2; }
+      .category-percent { grid-column: 2; grid-row: 1; font-size: 15px; }
+      .category-detail { grid-column: 1 / 3; grid-row: 3; margin-top: 0; font-size: 14px; }
+      .facility-heading { flex-wrap: wrap; align-items: flex-start; }
+      .facility-heading > div:first-child { flex: 1 1 100%; min-width: 0; }
+      .facility-tools { flex: 1 0 100%; align-self: stretch; width: 100%; }
+      .search { width: 100%; min-height: 46px; font-size: 15px; }
+      table { min-width: 520px; }
+      .chat-panel { width: calc(100vw - 22px); height: min(600px, calc(100dvh - 90px)); }
+      .clark-launcher { min-height: 54px; font-size: 14px; }
+      .clark-online { font-size: 10px; }
+      .chat-message { font-size: 16px; }
+      .chat-input { min-height: 50px; font-size: 17px; }
+      .chat-send { width: 50px; min-height: 50px; }
+      .change-preview-title { font-size: 15px; }
+      .change-preview-intro, .change-preview-status { font-size: 13px; }
+      .change-label { font-size: 13px; }
+      .change-values { font-size: 14px; }
+      .change-reason { font-size: 12px; }
+      .change-actions button { min-height: 46px; font-size: 13px; }
+    }
+    @media (max-width: 360px) {
+      .page { padding-right: 8px; padding-left: 8px; }
+      .brand { gap: 7px; }
+      h1 { font-size: 18px; }
+      .metric { padding: 10px; }
+      .metric-label { font-size: 12px; }
+      .metric-value { font-size: 24px; }
+      #metric-progress { font-size: 31px; }
+      .card-pad { padding: 12px; }
+      .health { grid-template-columns: 66px minmax(0, 1fr); gap: 8px; }
+      .health-ring { width: 64px; height: 64px; }
+      .health-ring::before { width: 50px; height: 50px; }
+      .health-number { font-size: 16px; }
+      .category-name { font-size: 13px; }
+      .category-percent { font-size: 13px; }
+      .category-detail { font-size: 12px; }
+      table { min-width: 490px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V5m0 14h18"/><path d="m6 15 4-4 3 2 6-7"/><path d="M16 6h3v3"/></svg>
+        </div>
+        <div>
+          <p class="eyebrow">Clark Water Project Controls</p>
+          <h1>Project Dashboard</h1>
+          <p id="updated-at" class="updated">Loading live spreadsheet data...</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="button" type="button" onclick="loadDashboard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"/><path d="M4.9 9a7.5 7.5 0 0 1 12.4-2L20 12M4 17v-5h5"/><path d="M19.1 15a7.5 7.5 0 0 1-12.4 2L4 12"/></svg>
+          <span>Refresh data</span>
+        </button>
+      </div>
+    </header>
+    <div id="error-banner" class="error-banner" role="alert"></div>
+
+    <div class="layout">
+      <div class="main-column">
+        <section class="metrics" aria-label="Executive summary">
+          <article class="metric">
+            <div class="metric-label"><span>Overall progress</span><span class="metric-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 2 5-7"/></svg></span></div>
+            <div id="metric-progress" class="metric-value">—</div><div class="metric-note">Work completed so far</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label"><span>Project locations</span><span class="metric-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 9h.01M15 9h.01M9 12h.01M15 12h.01"/></svg></span></div>
+            <div id="metric-facilities" class="metric-value">—</div><div class="metric-note">Locations in this project</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label"><span>On track</span><span class="metric-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></span></div>
+            <div id="metric-on-track" class="metric-value">—</div><div class="metric-note">Making good progress</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label"><span>At risk</span><span class="metric-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg></span></div>
+            <div id="metric-at-risk" class="metric-value">—</div><div class="metric-note">May need attention</div>
+          </article>
+        </section>
+
+        <section class="card card-pad">
+          <div class="section-heading">
+            <div><h2>Overall project health</h2><p class="section-caption">How much of the planned work is finished</p></div>
+          </div>
+          <div class="health">
+            <div id="health-ring" class="health-ring"><div id="health-number" class="health-number">—<small>Complete</small></div></div>
+            <div class="health-copy">
+              <div id="health-status" class="health-status">Calculating status</div>
+              <p id="health-description">A quick view of the work completed across all project locations.</p>
+              <div class="health-facts">
+                <div><span>Work completed </span><strong id="completed-quantity">—</strong></div>
+                <div><span>Total planned </span><strong id="planned-quantity">—</strong></div>
+                <div><span>Task status </span><strong id="work-items">—</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card-pad">
+          <div class="section-heading">
+            <div><h2>Progress by work type</h2><p class="section-caption">See how much work is finished in each category</p></div>
+          </div>
+          <div id="category-list" class="category-list"><div class="loading-state">Loading category performance...</div></div>
+        </section>
+
+        <section class="card card-pad">
+          <div class="section-heading facility-heading">
+            <div><h2>Progress by location</h2><p id="facility-count" class="section-caption">Locations with the least progress appear first</p></div>
+            <div class="facility-tools"><input id="facility-search" class="search" type="search" placeholder="Find a location" oninput="renderFacilities()" aria-label="Find a project location"></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Location</th><th>Tasks</th><th>Progress</th><th>Status</th></tr></thead>
+              <tbody id="facility-rows"><tr><td colspan="4" class="loading-state">Loading facility data...</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column">
+        <section class="card card-pad">
+          <div class="section-heading"><div><h2>Needs attention</h2><p class="section-caption">Issues to review</p></div></div>
+          <div id="alerts" class="alerts"><div class="loading-state">Checking for project alerts...</div></div>
+        </section>
+        <section class="card card-pad">
+          <div class="section-heading"><div><h2>Task details to review</h2><p class="section-caption">Missing or conflicting information</p></div></div>
+          <div class="quality-score"><strong id="quality-score">—</strong><span>/ 100 details complete</span></div>
+          <div class="quality-bar"><div id="quality-fill" style="width:0%"></div></div>
+          <div id="quality-list" class="quality-list"></div>
+        </section>
+        <section class="card card-pad">
+          <div class="section-heading"><div><h2>Planned work by type</h2><p class="section-caption">Compare the planned amount for each category</p></div></div>
+          <div id="allocation" class="allocation"><div class="loading-state">Loading allocation...</div></div>
+        </section>
+        <section class="card card-pad">
+          <div class="section-heading"><div><h2>Project finish estimate</h2><p class="section-caption">When the work may be finished</p></div></div>
+          <div id="planning-note" class="planning-note">Loading schedule availability...</div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <button id="clark-launcher" class="clark-launcher" type="button" aria-expanded="false" aria-controls="clark-chat" onclick="toggleClarkChat()">
+    <span class="clark-avatar" aria-hidden="true">CL</span>
+    <span>Ask Clark<span class="clark-online">Project AI assistant</span></span>
+  </button>
+  <section id="clark-chat" class="chat-panel" aria-label="Chat with Clark">
+    <header class="chat-header">
+      <div class="chat-title"><span class="clark-avatar" aria-hidden="true">CL</span><div><strong>Clark</strong><span>Project AI assistant</span></div></div>
+      <button class="chat-close" type="button" aria-label="Close chat" onclick="toggleClarkChat(false)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+    <div id="chat-messages" class="chat-messages"><div class="chat-message">Hello, I’m Clark. Ask me about project progress, categories, facilities, or bottlenecks.</div></div>
+    <form id="chat-form" class="chat-form" onsubmit="sendClarkMessage(event)">
+      <input id="chat-input" class="chat-input" type="text" autocomplete="off" placeholder="Ask about your project..." aria-label="Message Clark">
+      <button id="chat-send" class="chat-send" type="submit" aria-label="Send message">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <script>
+    let dashboardData = null;
+    let chatHistory = [];
+    let chatBusy = false;
+    let pendingClarkChanges = null;
+    const graphColors = ['#8A5A3B', '#B56F52', '#6F8060', '#568078', '#9A7850', '#786583', '#687D91', '#B08A42'];
+
+    function formatNumber(value, digits) {
+      return (Number(value) || 0).toLocaleString(undefined, {
+        maximumFractionDigits: digits === undefined ? 0 : digits
+      });
+    }
+
+    function formatPercent(value) {
+      return `${(Math.max(0, Number(value) || 0) * 100).toFixed(1)}%`;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function getCategoryColor(categoryName) {
+      const index = dashboardData.categories.findIndex(category => category.category === categoryName);
+      return graphColors[(index < 0 ? 0 : index) % graphColors.length];
+    }
+
+    function loadDashboard() {
+      const errorBanner = document.getElementById('error-banner');
+      errorBanner.style.display = 'none';
+      google.script.run
+        .withSuccessHandler(renderDashboard)
+        .withFailureHandler(error => {
+          errorBanner.textContent = error && error.message ? error.message : 'Unable to load dashboard data.';
+          errorBanner.style.display = 'block';
+        })
+        .getAdminDashboardData();
+    }
+
+    function renderDashboard(data) {
+      dashboardData = data;
+      const summary = data.summary;
+      const percent = Math.max(0, Math.min(1, Number(summary.overallProgress) || 0));
+      const percentLabel = formatPercent(percent);
+      setText('updated-at', `Data updated ${new Date(data.updatedAt).toLocaleString()}`);
+      setText('metric-progress', percentLabel);
+      setText('metric-facilities', formatNumber(summary.totalFacilities));
+      setText('metric-on-track', formatNumber(summary.onTrackFacilities));
+      setText('metric-at-risk', formatNumber(summary.atRiskFacilities));
+      setText('health-number', percentLabel);
+      document.getElementById('health-ring').style.setProperty('--progress', `${percent * 100}%`);
+      setText('completed-quantity', formatNumber(summary.totalCompleted, 1));
+      setText('planned-quantity', formatNumber(summary.totalPlanned, 1));
+      setText('work-items', `${formatNumber(summary.completedItems)} done · ${formatNumber(summary.inProgressItems)} underway`);
+
+      const status = document.getElementById('health-status');
+      status.textContent = percent >= 0.8 ? 'Great progress' : percent >= 0.5 ? 'Moving forward' : 'Needs attention';
+      status.style.color = percent >= 0.8 ? 'var(--green)' : percent >= 0.5 ? 'var(--amber)' : 'var(--red)';
+      setText('health-description', `${formatNumber(summary.completedItems)} of ${formatNumber(summary.totalItems)} tasks are finished across the project.`);
+      renderCategories();
+      renderFacilities();
+      renderAlerts();
+      renderQuality();
+      renderAllocation();
+      renderPlanning();
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('category-list');
+      container.replaceChildren();
+      if (!dashboardData.categories.length) {
+        container.innerHTML = '<div class="empty-state">No categorized tracker data is available.</div>';
+        return;
+      }
+      dashboardData.categories.forEach(category => {
+        const row = document.createElement('div');
+        row.className = 'category-row';
+        row.style.setProperty('--category-color', getCategoryColor(category.category));
+        const name = document.createElement('div');
+        name.className = 'category-name';
+        name.title = category.category;
+        const swatch = document.createElement('span');
+        swatch.className = 'category-swatch';
+        swatch.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'category-label';
+        label.textContent = category.category;
+        name.append(swatch, label);
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+        track.setAttribute('role', 'img');
+        track.setAttribute('aria-label', `${category.category}: ${formatPercent(category.percent)} complete`);
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.width = `${Math.min(100, Math.max(0, category.percent * 100))}%`;
+        fill.style.backgroundColor = getCategoryColor(category.category);
+        track.appendChild(fill);
+        const percent = document.createElement('div');
+        percent.className = 'category-percent';
+        percent.textContent = formatPercent(category.percent);
+        const details = document.createElement('div');
+        details.className = 'category-detail';
+        details.textContent = `${formatNumber(category.completed, 1)} done of ${formatNumber(category.planned, 1)} planned · ${formatNumber(category.itemCount)} tasks`;
+        row.append(name, track, percent, details);
+        container.appendChild(row);
+      });
+    }
+
+    function renderFacilities() {
+      if (!dashboardData) return;
+      const tbody = document.getElementById('facility-rows');
+      const query = document.getElementById('facility-search').value.trim().toLowerCase();
+      const facilities = dashboardData.facilities.filter(facility => facility.facilityName.toLowerCase().includes(query));
+      setText('facility-count', `${facilities.length} of ${dashboardData.facilities.length} locations`);
+      tbody.replaceChildren();
+      if (!facilities.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'empty-state';
+        cell.textContent = 'No locations match your search.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+      facilities.forEach(facility => {
+        const row = document.createElement('tr');
+        const name = document.createElement('td');
+        name.className = 'facility-name';
+        name.textContent = facility.facilityName;
+        const items = document.createElement('td');
+        items.textContent = formatNumber(facility.itemCount);
+        const progressCell = document.createElement('td');
+        const progress = document.createElement('div');
+        progress.className = 'facility-progress';
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.width = `${Math.min(100, Math.max(0, facility.percent * 100))}%`;
+        if (facility.status === 'AT RISK') fill.style.background = 'var(--red)';
+        track.appendChild(fill);
+        const value = document.createElement('span');
+        value.textContent = formatPercent(facility.percent);
+        progress.append(track, value);
+        progressCell.appendChild(progress);
+        const statusCell = document.createElement('td');
+        const status = document.createElement('span');
+        status.className = `pill ${facility.status === 'AT RISK' ? 'pill-risk' : facility.status === 'ON TRACK' ? 'pill-track' : 'pill-monitor'}`;
+        status.textContent = facility.status === 'AT RISK'
+          ? 'Needs attention'
+          : facility.status === 'ON TRACK'
+            ? 'On track'
+            : 'In progress';
+        statusCell.appendChild(status);
+        row.append(name, items, progressCell, statusCell);
+        tbody.appendChild(row);
+      });
+    }
+
+    function addAlert(container, type, title, message) {
+      const alert = document.createElement('div');
+      alert.className = `alert ${type}`;
+      const mark = document.createElement('span');
+      mark.className = 'alert-mark';
+      const copy = document.createElement('div');
+      const heading = document.createElement('p');
+      heading.className = 'alert-title';
+      heading.textContent = title;
+      const text = document.createElement('p');
+      text.className = 'alert-text';
+      text.textContent = message;
+      copy.append(heading, text);
+      alert.append(mark, copy);
+      container.appendChild(alert);
+    }
+
+    function renderAlerts() {
+      const container = document.getElementById('alerts');
+      container.replaceChildren();
+      const riskyCategories = dashboardData.categories.filter(category => category.percent < 0.5);
+      const riskyFacilities = dashboardData.facilities.filter(facility => facility.percent < 0.5);
+      const inconsistent = dashboardData.dataQuality.quantityInconsistencyCount;
+      if (riskyCategories.length) {
+        addAlert(container, 'critical', `${riskyCategories.length} work type${riskyCategories.length === 1 ? '' : 's'} may be falling behind`,
+          riskyCategories.slice(0, 3).map(category => `${category.category}: ${formatPercent(category.percent)} finished`).join(' · ') +
+          (riskyCategories.length > 3 ? ` · +${riskyCategories.length - 3} more` : ''));
+      }
+      if (riskyFacilities.length) {
+        addAlert(container, 'critical', `${riskyFacilities.length} location${riskyFacilities.length === 1 ? '' : 's'} may need attention`,
+          riskyFacilities.slice(0, 3).map(facility => `${facility.facilityName}: ${formatPercent(facility.percent)} finished`).join(' · ') +
+          (riskyFacilities.length > 3 ? ` · +${riskyFacilities.length - 3} more` : ''));
+      }
+      if (inconsistent) addAlert(container, 'critical', `${inconsistent} task${inconsistent === 1 ? '' : 's'} has more work recorded than planned`, 'Please check the entered amounts for these tasks.');
+      if (dashboardData.dataQuality.statusMismatchCount) {
+        addAlert(container, 'warning', `${dashboardData.dataQuality.statusMismatchCount} task status${dashboardData.dataQuality.statusMismatchCount === 1 ? '' : 'es'} may be incorrect`, 'Please check that the task status matches its progress.');
+      }
+      if (!container.children.length) addAlert(container, 'positive', 'Everything looks on track', 'No tasks currently need an urgent review.');
+    }
+
+    function renderQuality() {
+      const quality = dashboardData.dataQuality;
+      setText('quality-score', formatNumber(quality.score));
+      document.getElementById('quality-fill').style.width = `${quality.score}%`;
+      const list = document.getElementById('quality-list');
+      list.replaceChildren();
+      [
+        ['Tasks missing progress amounts', quality.missingCompletedCount],
+        ['Tasks missing notes', quality.missingRemarksCount],
+        ['Progress is more than planned', quality.quantityInconsistencyCount],
+        ['Task status may be incorrect', quality.statusMismatchCount]
+      ].forEach(([label, count]) => {
+        const row = document.createElement('div');
+        row.className = 'quality-item';
+        const name = document.createElement('span');
+        name.textContent = label;
+        const value = document.createElement('strong');
+        value.textContent = formatNumber(count);
+        row.append(name, value);
+        list.appendChild(row);
+      });
+    }
+
+    function renderAllocation() {
+      const container = document.getElementById('allocation');
+      container.replaceChildren();
+      const maxPlanned = Math.max(1, ...dashboardData.categories.map(category => category.planned));
+      dashboardData.categories.slice().sort((a, b) => b.planned - a.planned).slice(0, 7).forEach(category => {
+        const row = document.createElement('div');
+        row.className = 'allocation-row';
+        const name = document.createElement('div');
+        name.className = 'allocation-name';
+        name.title = category.category;
+        const swatch = document.createElement('span');
+        swatch.className = 'category-swatch';
+        swatch.style.setProperty('--category-color', getCategoryColor(category.category));
+        swatch.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.textContent = category.category;
+        name.append(swatch, label);
+        const value = document.createElement('div');
+        value.className = 'allocation-value';
+        value.textContent = formatNumber(category.planned, 1);
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+        track.setAttribute('role', 'img');
+        track.setAttribute('aria-label', `${category.category}: ${formatNumber(category.planned, 1)} planned quantity`);
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.width = `${Math.max(2, category.planned / maxPlanned * 100)}%`;
+        fill.style.backgroundColor = getCategoryColor(category.category);
+        track.appendChild(fill);
+        row.append(name, value, track);
+        container.appendChild(row);
+      });
+      if (!container.children.length) container.innerHTML = '<div class="empty-state">No planned quantities available.</div>';
+    }
+
+    function renderPlanning() {
+      const note = document.getElementById('planning-note');
+      note.replaceChildren();
+      const heading = document.createElement('strong');
+      heading.textContent = 'No finish date to show yet';
+      const detail = document.createElement('span');
+      detail.textContent = 'Add a planned finish date and update task progress regularly to see an estimate here.';
+      note.append(heading, detail);
+    }
+
+    function toggleClarkChat(forceOpen) {
+      const panel = document.getElementById('clark-chat');
+      const open = typeof forceOpen === 'boolean' ? forceOpen : !panel.classList.contains('open');
+      panel.classList.toggle('open', open);
+      document.getElementById('clark-launcher').setAttribute('aria-expanded', String(open));
+      if (open) document.getElementById('chat-input').focus();
+    }
+
+    function addChatMessage(text, isUser) {
+      const message = document.createElement('div');
+      message.className = `chat-message${isUser ? ' user' : ''}`;
+      message.textContent = text;
+      const messages = document.getElementById('chat-messages');
+      messages.appendChild(message);
+      messages.scrollTop = messages.scrollHeight;
+      return message;
+    }
+
+    function updateChatControls() {
+      document.getElementById('chat-send').disabled = chatBusy || Boolean(pendingClarkChanges);
+      document.getElementById('chat-input').disabled = chatBusy || Boolean(pendingClarkChanges);
+    }
+
+    function showChangePreview(changes) {
+      pendingClarkChanges = changes;
+      const preview = document.createElement('div');
+      preview.className = 'chat-message change-preview';
+      const title = document.createElement('p');
+      title.className = 'change-preview-title';
+      title.textContent = 'Review spreadsheet changes';
+      const intro = document.createElement('p');
+      intro.className = 'change-preview-intro';
+      intro.textContent = 'Nothing has been changed yet. Check each item, then confirm or cancel.';
+      const list = document.createElement('ol');
+      list.className = 'change-list';
+
+      changes.forEach(change => {
+        const item = document.createElement('li');
+        const label = document.createElement('span');
+        label.className = 'change-label';
+        label.textContent = change.label;
+        const values = document.createElement('span');
+        values.className = 'change-values';
+        values.textContent = `${change.oldDisplay}  →  ${change.newDisplay}`;
+        const reason = document.createElement('span');
+        reason.className = 'change-reason';
+        reason.textContent = change.reason;
+        item.append(label, values, reason);
+        list.appendChild(item);
+      });
+
+      const status = document.createElement('p');
+      status.className = 'change-preview-status';
+      const actions = document.createElement('div');
+      actions.className = 'change-actions';
+      const confirm = document.createElement('button');
+      confirm.className = 'change-confirm';
+      confirm.type = 'button';
+      confirm.textContent = 'Confirm changes';
+      confirm.addEventListener('click', () => confirmClarkChanges(status, actions));
+      const cancel = document.createElement('button');
+      cancel.className = 'change-cancel';
+      cancel.type = 'button';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => cancelClarkChanges(status, actions));
+      actions.append(confirm, cancel);
+      preview.append(title, intro, list, status, actions);
+      const messages = document.getElementById('chat-messages');
+      messages.appendChild(preview);
+      messages.scrollTop = messages.scrollHeight;
+      updateChatControls();
+    }
+
+    function confirmClarkChanges(status, actions) {
+      if (!pendingClarkChanges || chatBusy) return;
+      chatBusy = true;
+      status.textContent = 'Saving your confirmed changes...';
+      actions.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      updateChatControls();
+
+      google.script.run
+        .withSuccessHandler(result => {
+          status.textContent = result.message;
+          actions.remove();
+          pendingClarkChanges = null;
+          chatBusy = false;
+          updateChatControls();
+          loadDashboard();
+        })
+        .withFailureHandler(error => {
+          status.textContent = `Not saved: ${error && error.message ? error.message : 'Please try again or cancel.'}`;
+          chatBusy = false;
+          actions.querySelectorAll('button').forEach(button => { button.disabled = false; });
+          updateChatControls();
+        })
+        .applyClarkSpreadsheetChanges(pendingClarkChanges);
+    }
+
+    function cancelClarkChanges(status, actions) {
+      if (chatBusy) return;
+      pendingClarkChanges = null;
+      status.textContent = 'Canceled. No spreadsheet changes were made.';
+      actions.remove();
+      updateChatControls();
+    }
+
+    function sendClarkMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById('chat-input');
+      const query = input.value.trim();
+      if (!query || chatBusy || pendingClarkChanges) return;
+      addChatMessage(query, true);
+      input.value = '';
+      chatBusy = true;
+      updateChatControls();
+      const loading = addChatMessage('Checking your request...', false);
+      google.script.run
+        .withSuccessHandler(response => {
+          loading.textContent = response.reply;
+          chatHistory.push({ role: 'user', content: query }, { role: 'assistant', content: response.reply });
+          if (response.changes.length) showChangePreview(response.changes);
+          chatBusy = false;
+          updateChatControls();
+        })
+        .withFailureHandler(error => {
+          loading.textContent = `Unable to complete the request: ${error && error.message ? error.message : 'Please try again.'}`;
+          chatBusy = false;
+          updateChatControls();
+        })
+        .askAIChatbot(query, chatHistory);
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
